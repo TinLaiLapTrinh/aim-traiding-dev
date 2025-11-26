@@ -1,0 +1,353 @@
+import { TabWidget, GroupBox, VerticalBox, HorizontalBox, Button, CheckBox, ComboBox, ScrollView } from "std-widgets.slint";
+import { AimSearchBar } from "../../widgets/aim_widget.slint";
+import { DatePickerPopup, Button, LineEdit } from "std-widgets.slint";
+import { QuantitativeReturnMatrix } from "quantitative_return_matrix.slint";
+export component AimDatePicker inherits Rectangle {
+    in-out property <string> selected_date: "";
+    HorizontalLayout {
+        Rectangle {
+            height: 32px;
+            background: #222;
+            HorizontalLayout {
+                alignment: center;
+                Text {
+                    width: 150px;
+                    text: selected_date == "" ? "Chưa chọn ngày" : selected_date;
+                    color: #ffffff;
+                    font-size: 14px;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+        Rectangle {
+            background: #666;
+            border-radius: 6px;
+            date-picker-button := Button {
+                        icon: @image-url("../../image/stock_group/calendar.png");
+                        clicked => {
+                            date-picker.show();
+                        }
+                    }
+        }
+        
+        date-picker := DatePickerPopup {
+            x: (root.width - self.width) / 2;
+            y: (root.height - self.height ) / 2;
+            close-policy: PopupClosePolicy.no-auto-close;
+            accepted(date) => {
+                let day_str = date.day < 10 ? "0" + date.day : date.day;
+                let month_str = date.month < 10 ? "0" + date.month : date.month;
+                root.selected_date = day_str + "/" + month_str + "/" + date.year;
+                date-picker.close();
+            }
+            canceled => {
+                date-picker.close();
+            }
+        }
+    }
+}
+export component AssetCorrelationForm inherits Rectangle {
+    width: 600px;
+    background: #181818;
+    in-out property <string> code: "";
+    in-out property <string> start_date: "";
+    in-out property <string> end_date: "";
+    in-out property <string> period: "Daily";
+    callback onCalculate(string, string, string, string);
+
+    VerticalLayout {
+        spacing: 8px;
+        padding: 12px;
+        Rectangle {
+            height: 36px;
+            HorizontalLayout {
+                spacing: 8px;
+                Rectangle { width: 120px; background: transparent; Text { text: "Danh sách mã"; color: #fff; font-size: 14px; vertical-alignment: center; } }
+                Rectangle {
+                    width: 300px;
+                    height: 36px;
+                    background: transparent;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        LineEdit {
+                            text <=> code;
+                            placeholder_text: "Nhập mã chứng khoán";
+                            font-size: 12px;
+                            width: 220px;
+                            height: 36px;
+                        }
+                    }
+                }
+                
+                
+            }
+        }
+        Rectangle {
+            width: 300px;
+            height: 36px;
+            background: transparent;
+            HorizontalLayout {
+                spacing: 8px;
+                Rectangle { width: 120px; background: transparent; Text { text: "Bắt đầu"; color: #fff; font-size: 14px; vertical-alignment: center; } }
+                AimDatePicker {
+                    selected_date <=> start_date;
+                }
+                
+            }
+        }
+        Rectangle {
+            width: 300px;
+            height: 36px;
+            background: transparent;
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+                Rectangle { width: 120px; background: transparent; Text { text: "Kết thúc"; color: #fff; font-size: 14px; vertical-alignment: center; } }
+                AimDatePicker {
+                    selected_date <=> end_date;
+                }
+                
+            }
+        }
+        Rectangle {
+            width: 300px;
+            height: 36px;
+            background: transparent;
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+                Rectangle { width: 120px; background: transparent; Text { text: ""; color: #fff; font-size: 14px; vertical-alignment: center; } }
+                Rectangle {
+                    ComboBox {
+                        model: ["Daily", "Weekly", "Monthly"];
+                        current-value <=> period;
+                    }
+                }
+            }
+        }
+        // Hiển thị tổng hợp dữ liệu đã chọn
+        Rectangle {
+            background: transparent;
+            height: 36px;
+            HorizontalLayout {
+                Text {
+                    text: "Đã chọn: " + (code == "" ? "[Mã]" : code) + " | " + (start_date == "" ? "[Bắt đầu]" : start_date) + " - " + (end_date == "" ? "[Kết thúc]" : end_date) + " | " + "[Kỳ: " + period + "]";
+                    color: #ffffff;
+                    font-size: 14px;
+                }
+            }
+        }
+        
+        HorizontalLayout {
+            width: 100px;
+            height: 36px;
+            spacing: 12px;
+            Rectangle { width: 120px; background: transparent; }
+            Button {
+                text: "Tính Toán";
+                clicked => {
+                    onCalculate(code, start_date, end_date, period);
+                }
+            }
+            Button { 
+                text: "Xóa hết"; 
+                clicked => {
+                    code = "";
+                    start_date = "";
+                    end_date = "";
+                    period = "Daily";
+                }
+            }
+        }
+    }
+}
+struct AssetRow {
+    name: string,
+    ticker: string,
+    values: [float],
+}
+component AssetCorrelationMatrix inherits Rectangle {
+    in property <[AssetRow]> data: [
+        { name: "Ngân hàng TMCP Cổ Phần Á Châu", ticker: "ACB", values: [1.00, 0.76, 0.88, 0.82, -0.10, -0.23] },
+        { name: "Ngân hàng TMCP Việt Nam Thịnh Vượng", ticker: "VPB", values: [0.76, 1.00, 0.69, 0.65, -0.05, -0.13] },
+        { name: "Ngân hàng TMCP Tiên Phong", ticker: "TPB", values: [0.88, 0.69, 1.00, 0.87, -0.07, -0.19] },
+        { name: "CTCP Hoàng Anh Gia Lai", ticker: "HAG", values: [0.22, 0.65, 0.87, 1.00, -0.09, -0.22] },
+        { name: "CTCP Nhựa An Phát Xanh", ticker: "AAA", values: [-0.10, -0.05, -0.07, -0.09, 1.00, 0.59] },
+        { name: "CTCP Sữa Việt Nam - VINAMILK", ticker: "VNM", values: [-0.23, -0.13, -0.19, -0.22, 0.59, 1.00] },
+    ];
+    in property <[string]> columns: ["ACB", "VPB", "TPB", "HAG", "AAA", "VNM"];
+   
+    VerticalLayout {
+        AssetCorrelationForm {
+            width: 100%;
+            x: 0;
+        }
+
+        Rectangle {
+            border-radius: 6px;
+            // width: 1100px;
+            // height: 320px;
+            VerticalLayout {
+                spacing: 0;
+                Rectangle {
+                    height: 36px;
+                    background: #222;
+                    border-width: 1px;
+                    border-color: #585858;
+                    HorizontalLayout {
+                        spacing: 0;
+                        VerticalLayout { width: 400px; alignment: center; 
+                            Text { text: "Name"; color: #e0e0e0; font-weight: 700; horizontal-alignment: center; } }
+                        Rectangle { width: 80px; background: transparent; Text { text: "Ticker"; color: #e0e0e0; font-weight: 700; } }
+                        for col in root.columns: Rectangle { width: 80px; background: transparent; 
+                            Text { text: col; color: #e0e0e0; font-weight: 700; horizontal-alignment: center; 
+                            } 
+                        }
+                    }
+                }
+                for row[i] in root.data: Rectangle {
+                    height: 36px;
+                    background: Math.mod(i, 2) == 0 ? #222 : #181818;
+                    HorizontalLayout {
+                        spacing: 0;
+                        alignment: start;
+                        VerticalLayout { 
+                            width: 400px; 
+                            alignment: center; 
+                            padding-left: 8px; 
+                            Text { 
+                                text: row.name; 
+                                color: #fff; 
+                                horizontal-alignment: left;
+                            } 
+                        }
+                        Rectangle { width: 80px; background: transparent; Text { text: row.ticker; color: #fff; horizontal-alignment: center; } }
+                        for value[j] in row.values: Rectangle {
+                            width: 80px;
+                            background: value >= 1 ? #2a4e6c : value < 0 ? #4e2a2a : #5080a8;
+                            Text {
+                                text: value;
+                                color: #fff;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    
+}
+
+export component HorizontalTabBar {
+    in property <[string]> tabs: ["Asset Correlation", "Price - Trade Heatmap", "Return Matrix", "Technical Indicator", "Basic Statistical"];
+    in-out property <int> selected: 0;
+    callback on_tab_selected(index: int);
+    //local variables
+    property <color> bg-tab-selected: #18d6c2;
+    property <color> bg-tab-unselected: #444 ;
+    property <color> bg-tab: #666 ;
+    width: 1200px;
+    height: 40px;
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: bg-tab;
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+            width: parent.width;
+            height: parent.height;
+            padding-top: 8px;
+            padding-left: 8px;
+            for tab[i] in root.tabs: Rectangle {
+                height: parent.height - 16px;
+                width:text.width + 20px;
+                background: i == root.selected ? root.bg-tab-selected : transparent;
+                border-radius: 8px;
+                states [
+                    hover when touch_area.has-hover: {
+                        background: i == root.selected ? root.bg-tab-selected : root.bg-tab-unselected;
+                    }
+                ]
+                text:= Text {
+                    text: tab;
+                    color: i == root.selected ? #fff : #e0e0e0;
+                    font-size: 14px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+                touch_area := TouchArea {
+                    clicked => {
+                        root.selected = i;
+                        root.on_tab_selected(i);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+export global GallerySettings {
+    in property <bool> widgets-enabled: true;
+    in property <bool> widgets-read-only: false;
+}
+export component QuantitativeLayout inherits Rectangle {
+    width: 1200px;
+    height: 800px;
+    in-out property <int> selected_tab: 0;
+    VerticalLayout {
+        spacing: 0;
+        HorizontalTabBar {
+            width: parent.width;
+            height: 40px;
+            selected <=> root.selected_tab;
+            on_tab_selected(index) => {
+                root.selected_tab = index;
+            }
+        }
+        Rectangle {
+            width: parent.width;
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+
+
+                AssetCorrelationMatrix {
+                    x: 0;
+                    visible: selected_tab == 0;
+                }
+            }
+            Rectangle {
+                visible: selected_tab == 1;
+                background: #48964e;
+            }
+            
+            VerticalLayout {
+                height: parent.height;
+                width: parent.width;
+                visible: selected_tab == 2;
+               
+                QuantitativeReturnMatrix {
+                    width: parent.width;
+                    //binding data later
+                }
+                
+            }
+            Rectangle {
+                visible: selected_tab == 3;
+                background: #1074f4;
+            }
+            Rectangle {
+                visible: selected_tab == 4;
+                background: #4d2222;
+            }
+        }
+
+    }
+}

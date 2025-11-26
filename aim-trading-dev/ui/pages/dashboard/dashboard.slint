@@ -1,0 +1,103 @@
+import { HeatMap } from "heatmap.slint";
+import { StockInfluence } from "Influence_table.slint";
+import { ICBIndex } from "ICB_index.slint";
+import { OverallIndex } from "overall_index.slint";
+import { TextButton } from "../../widgets/aim_widget.slint";
+import { GoodsPrice } from "goods_price.slint";
+import { AbnormalTrade } from "abnormal_trade.slint";
+import { VolumeData, AbnormalTradeData, ICBRow, HeatMapData,InfluenceData, IndexRow, GoodsData ,VnIndexData} from "../../data_type.slint";
+// 
+import { TradingVolume } from "trading_volume.slint";
+
+export component DashBoard inherits Rectangle {
+    in property <[InfluenceData]> influence_data;
+    in property <[IndexRow]> index_data;
+    in property <HeatMapData> heatmap_data;
+    in property <[ICBRow]> icb_index_data;
+    in property <[AbnormalTradeData]> abnormal_trade_data;
+    in property <[VolumeData]> td_data;
+    in property <[VolumeData]> nn_data;
+    in property <[GoodsData]> good_data;
+    in property <[VnIndexData]> vn_index_data;
+    background: #1a1a1a;
+    Flickable {
+        HorizontalLayout {
+            padding: 16px;
+            VerticalLayout {
+                TradingVolume {
+                    title: "GIAO DỊCH TỰ DOANH";
+                    min-height: 150px;
+                    data <=> td_data;
+                }
+                TradingVolume {
+                    min-height: 150px;
+                    title: "GIAO DỊCH NƯỚC NGOÀI";
+                    data <=> nn_data;
+                }
+                OverallIndex {
+                    max-width: 600px;
+                    data <=> index_data;
+                }
+                ICBIndex {
+                    data <=> icb_index_data;
+                }
+            }
+            VerticalLayout {
+                StockInfluence {
+                    data <=> influence_data;
+                }
+                Rectangle {
+                    height: 40px;
+                    background: transparent;
+                    Text {
+                        text: "SƠ ĐỒ NHIỆT THỊ TRƯỜNG CHỨNG KHOÁN";
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: white;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                Rectangle {
+                    height: 1px;
+                    background: #444;
+                }
+                // Main heatmap
+                // HeatMap {
+                //     data <=> heatmap_data;
+                // }
+            }
+            VerticalLayout {
+                AbnormalTrade {
+                    max-width: 500px;
+                    data <=> abnormal_trade_data;
+                }
+                GoodsPrice {
+                    data <=> good_data;
+                }
+            }
+        }
+    }
+}
+
+
+export component AppWindow inherits Window {
+    in-out property <[InfluenceData]> stock_influence_data;
+    in-out property <[IndexRow]> overall_index_data;
+    in-out property <HeatMapData> heatmap_data;
+    in-out property <[ICBRow]> icb_index_data;
+    in-out property <[VolumeData]> td_data;
+    in-out property <[VolumeData]> nn_data;
+    in-out property <[AbnormalTradeData]> abnormal_trade_data;
+    in-out property <[GoodsData]> good_data;
+    DashBoard {
+        influence_data <=> root.stock_influence_data;
+        index_data <=> root.overall_index_data;
+        heatmap_data <=> root.heatmap_data;
+        icb_index_data <=> root.icb_index_data;
+        abnormal_trade_data <=> root.abnormal_trade_data;
+        td_data <=> root.td_data;
+        nn_data <=> root.nn_data;
+        good_data <=> root.good_data;
+    }
+}
